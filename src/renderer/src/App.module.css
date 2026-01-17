@@ -1,0 +1,126 @@
+.container {
+    text-align: center;
+    
+    padding: 30px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    background: rgba(240, 240, 240, 0.04); /* gris muy claro, opacidad bajísima */
+    backdrop-filter: blur(1px);            /* vidrio esmerilado fuerte pero suave */
+    border-radius: 28px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08); /* sombra muy ligera */
+    color: rgba(255, 255, 255, 0.85);       /* texto blanco suave */
+    user-select: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .title {
+    font-size: 2.8rem;
+    margin: 0 0 30px;
+    font-weight: 300;
+    letter-spacing: 2px;
+    opacity: 0.75;
+  }
+  
+  .mode {
+    font-size: 1.8rem;
+    margin: 0 0 25px;
+    font-weight: 400;
+    opacity: 0.7;
+  }
+  
+  .timer {
+    font-size: 2rem;
+    font-weight: 100;
+    letter-spacing: 1px;
+    margin: 20px 0;
+    opacity: 0.95;
+  }
+  
+  .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin: 50px 0;
+  }
+  
+  .button {
+    padding: 8px 24px;
+    font-size: 1rem;
+    font-weight: 400;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(200,200,200,0.06));
+    color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(6px);
+    transition: all 0.3s ease;
+  }
+  
+  .button:hover {
+    background: linear-gradient(145deg, rgba(255,255,255,0.15), rgba(220,220,220,0.12));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  }
+  
+  .button:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+  
+  .button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  
+  .pomodoros {
+    font-size: 1.4rem;
+    opacity: 0.6;
+    margin-top: 30px;
+  }
+  
+  /* Configuración (muy sutil) */
+  .configSection {
+    margin-top: 60px;
+    padding: 20px;
+    background: rgba(38, 180, 59, 0.05);
+    border-radius: 20px;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .configTitle {
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+    opacity: 0.8;
+  }
+  
+  .configLabel {
+    display: flex;
+    align-items: center;
+    margin: 12px 0;
+    font-size: 1rem;
+    opacity: 0.85;
+  }
+  
+  .configInput {
+    flex: 1;
+    max-width: 90px;
+    margin-left: auto;
+    padding: 6px 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    color: white;
+    font-size: 1rem;
+    text-align: center;
+  }
+  
+  .configButtons {
+    margin-top: 25px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+  }
+  
+  .saveButton { background: linear-gradient(145deg, rgba(255,255,255,0.15), rgba(220,220,220,0.12)); }
+  .cancelButton { background: linear-gradient(145deg, rgba(180,180,180,0.12), rgba(150,150,150,0.1)); }

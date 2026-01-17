@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+  
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./prisma/dev.db"
+}
+
+model UserSettings {
+  id        Int      @id @default(autoincrement())
+  workTime  Int      @default(25)  // minutos de trabajo (Pomodoro default)
+  breakTime Int      @default(5)   // minutos de descanso
+  longBreak Int      @default(15)  // descanso largo
+  createdAt DateTime @default(now())
+}
+
+model DailyLog {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @unique
+  hoursWorked Float    @default(0)
+  goalsMet    Boolean  @default(false)
+  streak      Int      @default(0)
+  notes       String?
+}
