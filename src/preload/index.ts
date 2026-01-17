@@ -8,7 +8,14 @@ const api = {
 
   // Guardar nuevos settings
   updateSettings: (settings: { workTime: number; breakTime: number; longBreak: number }) =>
-    ipcRenderer.invoke('update-settings', settings)
+    ipcRenderer.invoke('update-settings', settings),
+  
+        //contar progreso diario 
+  logDailyProgress: (hours: number) => 
+    ipcRenderer.invoke('log-daily-progress', hours),
+
+  getDailyLog: (date: Date) => ipcRenderer.invoke('get-daily-log', date)
+
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

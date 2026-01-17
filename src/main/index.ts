@@ -129,6 +129,60 @@ ipcMain.handle('update-settings', async (_, settings: { workTime: number; breakT
     throw error
   }
 })
+
+ipcMain.handle('log-daily-progress', async (_, hours: number) => {
+  try {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // inicio del día
+
+    let log = await prisma.dailyLog.findFirst({
+      where: { date: today }
+    })
+
+    if (!log) {
+      log = await prisma.dailyLog.create({
+        data: {
+          date: today,
+          hoursWorked: 0,
+          goalsMet: false,
+          streak: 0
+        }
+      })
+    }
+
+    const newHours = log.hoursWorked + hours
+
+    // Objetivo: 2 horas o 4 pomodoros (lo ajustamos más adelante)
+    const goalsMet = newHours >= 2
+
+    await prisma.dailyLog.update({
+      where: { id: log.id },
+      data: {
+        hoursWorked: newHours,
+        goalsMet
+      }
+    })
+
+    return { success: true, hoursWorked: newHours, goalsMet }
+  } catch (error) {
+    console.error('Error en log-daily-progress:', error)
+    throw error
+  }
+})
+
+
+ipcMain.handle('get-daily-log', async (_, date: Date) => {
+  try {
+    const log = await prisma.dailyLog.findFirst({
+      where: { date }
+    })
+    return log
+  } catch (error) {
+    console.error('Error get-daily-log:', error)
+    throw error
+  }
+})
+
 })
 
 app.on('window-all-closed', () => {

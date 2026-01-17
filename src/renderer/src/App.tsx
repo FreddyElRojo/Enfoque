@@ -17,6 +17,10 @@ function App() {
   const [tempSettings, setTempSettings] = useState<Partial<Settings>>({})
   const [mode, setMode] = useState<'work' | 'shortBreak' | 'longBreak'>('work')
   const [completedPomodoros, setCompletedPomodoros] = useState(0)
+  const [todayWorked, setTodayWorked] = useState(0) // Horas acumuladas hoy (progreso parcial)
+  
+
+
 
   // Carga settings al montar
   useEffect(() => {
@@ -27,8 +31,24 @@ function App() {
         console.log('Settings cargados:', data)
       })
       .catch(err => console.error('Error cargando settings:', err))
+
+      // Carga el progreso parcial del día actual (nuevo)
+  const loadTodayWorked = async () => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const log = await window.api.getDailyLog(today) // nuevo IPC que agregaremos
+    if (log) {
+      setTodayWorked(log.hoursWorked)
+      console.log('Progreso parcial hoy cargado:', log.hoursWorked)
+  } else {
+    console.log('No hay registro de hoy todavía')
+    }
+  }
+  loadTodayWorked()
   }, [])
 
+
+  
   // Memoizar getExpiryTimestamp para evitar recreación en cada render
   const getExpiryTimestamp = useCallback(() => {
     const time = new Date()
@@ -80,6 +100,7 @@ function App() {
     if (mode === 'work') {
       const newCount = completedPomodoros + 1
       setCompletedPomodoros(newCount)
+      window.api.logDailyProgress(workDuration / 60) // suma horas completas
 
       if (newCount % 4 === 0) {
         setMode('longBreak')
@@ -92,12 +113,40 @@ function App() {
   }
 
   function resetTimer() {
-    setMode('work')
-    setCompletedPomodoros(0)
-    if (settings) {
-      restart(getExpiryTimestamp(), false)
+    // Suma tiempo trabajado hasta ahora (simplificado: resta tiempo restante del ciclo actual)
+    const totalDuration = mode === 'work' ? workDuration : (mode === 'shortBreak' ? shortBreakDuration : longBreakDuration)
+    const remainingMinutes = minutes + seconds / 60
+    const workedMinutes = totalDuration - remainingMinutes
+    if (workedMinutes > 0 && mode === 'work') {
+      window.api.logDailyProgress(workedMinutes / 60)
     }
+  
+    setMode('work')
+    restart(getExpiryTimestamp(), false)
   }
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null
+  
+    if (isRunning && mode === 'work') {
+      interval = setInterval(() => {
+        const minutesSinceLast = 0.5 // 30 segundos = 0.5 minutos
+        const hoursToAdd = minutesSinceLast / 60 // ~0.0083 horas
+  
+        // Actualiza UI local (progreso parcial)
+        setTodayWorked(prev => prev + hoursToAdd)
+  
+        // Guarda en DB
+        window.api.logDailyProgress(hoursToAdd)
+          .then(() => console.log('Progreso parcial guardado:', hoursToAdd))
+          .catch(err => console.error('Error guardando parcial:', err))
+      }, 30000) // 30 segundos
+    }
+  
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [isRunning, mode])
 
   // Calcular horas y minutos para mostrar correctamente más de 60 minutos
   function formatTime() {
@@ -164,6 +213,9 @@ function App() {
       <p className={styles.pomodoros}>
         Pomodoros: {completedPomodoros}
       </p>
+      <p className={styles.dailyProgress}>
+  Hoy ya sumaste: {todayWorked.toFixed(2)} horas 🔥
+</p>
 
       <div className={styles.configSection}>
         <h3 className={styles.configTitle}>Configuración</h3>

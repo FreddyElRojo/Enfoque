@@ -1,6 +1,6 @@
 # Enfoque – Pomodoro Personal
 
-Aplicación de escritorio minimalista y no invasiva para mejorar la concentración usando la técnica Pomodoro.  
+Aplicación de escritorio  mejorar la productividad y el enfoque.  
 Hecha con **Electron + Vite + React + TypeScript + Prisma + SQLite**.
 
 ### Estado actual (enero 2026)
@@ -34,7 +34,7 @@ Hecha con **Electron + Vite + React + TypeScript + Prisma + SQLite**.
 ### Instalación y desarrollo
 
 ```bash
-git clone https://github.com/TU_USUARIO/enfoque-pomodoro.git
+git clone https://github.com/FreddyElRojo/enfoque-pomodoro.git
 cd enfoque-pomodoro
 npm install
 npm run dev
