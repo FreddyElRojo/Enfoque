@@ -1,8 +1,26 @@
-import { useEffect, useState, useCallback } from 'react'
-import { useTimer } from 'react-timer-hook'
+/*Este archivo es el orquestador principal y punto de entrada del renderer process (React).
+Su responsabilidad única y concisa es:
+
+Componer la aplicación completa uniendo todos los hooks y componentes.
+Mantener los estados de alto nivel que conectan todo (editMode, tempSettings).
+Coordinar la comunicación entre hooks (useSettings, useTimerCycle, useDailyProgress) y componentes visuales (TimerDisplay, ProgressSummary, ConfigPanel).
+No contiene lógica de negocio pesada → delega todo a hooks y componentes.*/
+
+// Importamos los hooks principales (cada uno maneja una responsabilidad específica)
+import { useEffect, useState } from 'react'
+import { useSettings } from './hooks/useSettings'              // Conexión con DB (carga/update settings)
+import { useTimerCycle } from './hooks/useTimerCycle'          // Núcleo del temporizador Pomodoro
+import { useDailyProgress } from './hooks/useDailyProgress'    // Progreso parcial diario (intervalo 30s)
+
+// Importamos los componentes visuales (UI pura, reciben props y renderizan)
+import { TimerDisplay } from './components/TimerDisplay'       // Countdown + botones de control
+import { ProgressSummary } from './components/ProgressSummary' // Pomodoros y horas hoy
+import { ConfigPanel } from './components/ConfigPanel'         // Vista/edición de settings
+
+// Estilos globales del módulo CSS (vidrio esmerilado, colores por modo, botones finos)
 import styles from './App.module.css'
 
-// Tipo para settings desde DB
+// Tipo Settings (consistente en toda la app, representa el registro único en UserSettings)
 type Settings = {
   id: number
   workTime: number
@@ -11,270 +29,95 @@ type Settings = {
   createdAt: Date | string
 }
 
+// Componente raíz del renderer: orquesta toda la app
 function App() {
-  const [settings, setSettings] = useState<Settings | null>(null)
+  // Hook principal de conexión con DB: carga settings y provee función para actualizarlos
+  // Se conecta vía IPC a main → Prisma → DB
+  const { settings, updateSettings } = useSettings()
+
+  // Estado local para manejar modo edición y valores temporales del formulario
+  // Se usa como puente entre ConfigPanel y la función updateSettings
   const [editMode, setEditMode] = useState(false)
   const [tempSettings, setTempSettings] = useState<Partial<Settings>>({})
-  const [mode, setMode] = useState<'work' | 'shortBreak' | 'longBreak'>('work')
-  const [completedPomodoros, setCompletedPomodoros] = useState(0)
-  const [todayWorked, setTodayWorked] = useState(0) // Horas acumuladas hoy (progreso parcial)
-  
 
-
-
-  // Carga settings al montar
-  useEffect(() => {
-    window.api.getSettings()
-      .then((data: Settings) => {
-        setSettings(data)
-        setTempSettings(data)
-        console.log('Settings cargados:', data)
-      })
-      .catch(err => console.error('Error cargando settings:', err))
-
-      // Carga el progreso parcial del día actual (nuevo)
-  const loadTodayWorked = async () => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const log = await window.api.getDailyLog(today) // nuevo IPC que agregaremos
-    if (log) {
-      setTodayWorked(log.hoursWorked)
-      console.log('Progreso parcial hoy cargado:', log.hoursWorked)
-  } else {
-    console.log('No hay registro de hoy todavía')
-    }
-  }
-  loadTodayWorked()
-  }, [])
-
-
-  
-  // Memoizar getExpiryTimestamp para evitar recreación en cada render
-  const getExpiryTimestamp = useCallback(() => {
-    const time = new Date()
-    let duration = 25 // valor por defecto
-    
-    if (settings) {
-      switch (mode) {
-        case 'work':
-          duration = settings.workTime
-          break
-        case 'shortBreak':
-          duration = settings.breakTime
-          break
-        case 'longBreak':
-          duration = settings.longBreak
-          break
-      }
-    }
-    
-    // Usar getTime() para evitar problemas con valores mayores a 60
-    time.setTime(time.getTime() + duration * 60 * 1000)
-    return time
-  }, [settings, mode])
-
-  // Inicializar el timer solo después de cargar los settings
+  // Hook del temporizador: maneja modos, countdown, ciclos y control
+  // Recibe duraciones de settings → se actualiza automáticamente cuando cambian
   const {
-    totalSeconds,
-    seconds,
-    minutes,
-    isRunning,
-    start,
-    pause,
-    resume,
-    restart
-  } = useTimer({
-    expiryTimestamp: getExpiryTimestamp(),
-    onExpire: handleCycleComplete,
-    autoStart: false
+    mode,                    // Modo actual (trabajo/descanso) → afecta fondo y texto
+    totalSeconds,            // Total segundos restantes → para formato >60 min
+    seconds, minutes,        // Partes del tiempo actual
+    isRunning,               // Estado del timer → alimenta useDailyProgress
+    start, pause, resume,    // Funciones de control → pasan a TimerDisplay
+    resetTimer,              // Reinicio completo → pasa a TimerDisplay
+    completedPomodoros       // Contador de ciclos terminados → pasa a ProgressSummary
+  } = useTimerCycle({
+    workDuration: settings?.workTime || 25,         // Duración de trabajo (de DB o default)
+    shortBreakDuration: settings?.breakTime || 5,   // Descanso corto
+    longBreakDuration: settings?.longBreak || 15    // Descanso largo
   })
 
-  // Actualizar el timer cuando cambian los settings o el modo
+  // Hook de progreso parcial: suma horas cada 30s en modo trabajo
+  // Depende de isRunning y mode (del useTimerCycle) → solo suma en trabajo activo
+  const { todayWorked } = useDailyProgress({ isRunning, mode })
+
+  // Inicializa tempSettings con valores actuales cuando settings se cargan de DB
+  // Esto permite que el formulario de edición arranque con los valores correctos
   useEffect(() => {
     if (settings) {
-      restart(getExpiryTimestamp(), false)
+      setTempSettings(settings)
     }
-  }, [settings, mode, getExpiryTimestamp, restart])
+  }, [settings])
 
-  function handleCycleComplete() {
-    if (mode === 'work') {
-      const newCount = completedPomodoros + 1
-      setCompletedPomodoros(newCount)
-      window.api.logDailyProgress(workDuration / 60) // suma horas completas
-
-      if (newCount % 4 === 0) {
-        setMode('longBreak')
-      } else {
-        setMode('shortBreak')
-      }
-    } else {
-      setMode('work')
-    }
-  }
-
-  function resetTimer() {
-    // Suma tiempo trabajado hasta ahora (simplificado: resta tiempo restante del ciclo actual)
-    const totalDuration = mode === 'work' ? workDuration : (mode === 'shortBreak' ? shortBreakDuration : longBreakDuration)
-    const remainingMinutes = minutes + seconds / 60
-    const workedMinutes = totalDuration - remainingMinutes
-    if (workedMinutes > 0 && mode === 'work') {
-      window.api.logDailyProgress(workedMinutes / 60)
-    }
-  
-    setMode('work')
-    restart(getExpiryTimestamp(), false)
-  }
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
-  
-    if (isRunning && mode === 'work') {
-      interval = setInterval(() => {
-        const minutesSinceLast = 0.5 // 30 segundos = 0.5 minutos
-        const hoursToAdd = minutesSinceLast / 60 // ~0.0083 horas
-  
-        // Actualiza UI local (progreso parcial)
-        setTodayWorked(prev => prev + hoursToAdd)
-  
-        // Guarda en DB
-        window.api.logDailyProgress(hoursToAdd)
-          .then(() => console.log('Progreso parcial guardado:', hoursToAdd))
-          .catch(err => console.error('Error guardando parcial:', err))
-      }, 30000) // 30 segundos
-    }
-  
-    return () => {
-      if (interval) clearInterval(interval)
-    }
-  }, [isRunning, mode])
-
-  // Calcular horas y minutos para mostrar correctamente más de 60 minutos
-  function formatTime() {
-    const totalMinutes = Math.floor(totalSeconds / 60)
-    const hours = Math.floor(totalMinutes / 60)
-    const minutes = totalMinutes % 60
-    const seconds = totalSeconds % 60
-    
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-    } else {
-      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-    }
-  }
-
+  // Función para guardar cambios en DB (llama a updateSettings del hook)
+  // Se pasa como prop a ConfigPanel → se ejecuta al presionar Guardar
   const saveSettings = async () => {
     if (!tempSettings.workTime || !tempSettings.breakTime || !tempSettings.longBreak) return
 
     try {
-      await window.api.updateSettings({
+      await updateSettings({
         workTime: tempSettings.workTime,
         breakTime: tempSettings.breakTime,
         longBreak: tempSettings.longBreak
       })
-      const updated = await window.api.getSettings()
-      setSettings(updated)
-      setTempSettings(updated)
       setEditMode(false)
-      console.log('Settings guardados')
+      console.log('Settings guardados y timer actualizado')
     } catch (err) {
       console.error('Error guardando settings:', err)
     }
   }
 
-  // Mostrar valores actuales
-  const workDuration = settings?.workTime || 25
-  const shortBreakDuration = settings?.breakTime || 5
-  const longBreakDuration = settings?.longBreak || 15
-
+  // Renderizado principal: composición de componentes
   return (
+    // Contenedor raíz con clase dinámica según modo (fondo cambia por trabajo/descanso)
     <div className={`${styles.container} ${styles[mode]}`}>
-      
-      
-      <h2 className={`${styles.mode} ${mode === 'work' ? styles.workMode : styles.breakMode}`}>
-        {mode === 'work' ? 'Trabajo' : mode === 'shortBreak' ? 'Descanso' : 'Largo'}
-      </h2>
+      {/* Título principal (fijo) */}
+      <h1 className={styles.title}>Enfoque</h1>
 
-      <div className={styles.timer}>
-        {formatTime()}
-      </div>
+      {/* Componente del temporizador: recibe todo el estado y control del hook */}
+      <TimerDisplay
+        totalSeconds={totalSeconds}
+        seconds={seconds}
+        minutes={minutes}
+        mode={mode}
+        isRunning={isRunning}
+        start={start}
+        pause={pause}
+        resume={resume}
+        resetTimer={resetTimer}
+      />
 
-      <div className={styles.buttons}>
-        <button onClick={start} disabled={isRunning} className={styles.button}>
-          Iniciar
-        </button>
-        <button onClick={isRunning ? pause : resume} className={styles.button}>
-          {isRunning ? 'Pausar' : 'Reanudar'}
-        </button>
-        <button onClick={resetTimer} className={styles.button}>
-          Reset
-        </button>
-      </div>
+      {/* Resumen de progreso: recibe contadores del hook y progreso parcial */}
+      <ProgressSummary completedPomodoros={completedPomodoros} todayWorked={todayWorked} />
 
-      <p className={styles.pomodoros}>
-        Pomodoros: {completedPomodoros}
-      </p>
-      <p className={styles.dailyProgress}>
-  Hoy ya sumaste: {todayWorked.toFixed(2)} horas 🔥
-</p>
-
-      <div className={styles.configSection}>
-        <h3 className={styles.configTitle}>Configuración</h3>
-        
-        {editMode ? (
-          <div>
-            <div className={styles.configLabel}>
-              <label>Trabajo:</label>
-              <input 
-                type="number" 
-                value={tempSettings.workTime ?? 25}
-                onChange={e => setTempSettings({ ...tempSettings, workTime: Number(e.target.value) })}
-                min="1"
-                className={styles.configInput}
-              />
-            </div>
-            
-            <div className={styles.configLabel}>
-              <label>Descanso corto:</label>
-              <input 
-                type="number" 
-                value={tempSettings.breakTime ?? 5}
-                onChange={e => setTempSettings({ ...tempSettings, breakTime: Number(e.target.value) })}
-                min="1"
-                className={styles.configInput}
-              />
-            </div>
-            
-            <div className={styles.configLabel}>
-              <label>Descanso largo:</label>
-              <input 
-                type="number" 
-                value={tempSettings.longBreak ?? 15}
-                onChange={e => setTempSettings({ ...tempSettings, longBreak: Number(e.target.value) })}
-                min="1"
-                className={styles.configInput}
-              />
-            </div>
-
-            <div className={styles.configButtons}>
-              <button onClick={saveSettings} className={`${styles.button} ${styles.saveButton}`}>
-                Guardar
-              </button>
-              <button onClick={() => setEditMode(false)} className={`${styles.button} ${styles.cancelButton}`}>
-                Cancelar
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <p>Trabajo: {workDuration} min</p>
-            <p>Descanso corto: {shortBreakDuration} min</p>
-            <p>Descanso largo: {longBreakDuration} min</p>
-            <button onClick={() => setEditMode(true)} className={styles.button}>
-              Editar
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Panel de configuración: recibe estado de edición y callbacks */}
+      <ConfigPanel
+        editMode={editMode}
+        tempSettings={tempSettings}
+        setTempSettings={setTempSettings}
+        saveSettings={saveSettings}
+        setEditMode={setEditMode}
+        settings={settings}
+      />
     </div>
   )
 }

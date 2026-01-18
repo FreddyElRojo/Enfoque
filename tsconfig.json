@@ -1,5 +1,15 @@
 {
-  "files": [],
-  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }],
-  
+  // Este archivo es el punto de entrada de TypeScript para todo el proyecto
+  // No incluye archivos ni reglas propias: solo referencia otros tsconfigs
+  // Esto crea un "proyecto compuesto" donde main/preload y renderer se compilan por separado
+
+  "files": [], // No incluimos archivos individuales aquí (para evitar conflictos)
+
+  "references": [
+    // Referencia al config para Node/main/preload (entorno Electron/Node.js)
+    { "path": "./tsconfig.node.json" },
+
+    // Referencia al config para renderer (entorno web/React/Vite)
+    { "path": "./tsconfig.web.json" }
+  ]
 }

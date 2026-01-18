@@ -1,14 +1,48 @@
+/*Este archivo es el archivo de configuración de TypeScript exclusivo 
+para el entorno web/renderer del proyecto (la parte React + Vite).
+Es el config principal que TypeScript y Vite usan para tipar y compilar todo el código del
+ renderer (App.tsx, hooks como useSettings/useTimerCycle/useDailyProgress, componentes como TimerDisplay/ProgressSummary/ConfigPanel, env.d.ts, etc.).*/
+
+
 {
+  // Lista de archivos y carpetas que TypeScript debe incluir en esta compilación
+  // Solo los del entorno renderer/web/React → no incluye main ni preload
   "include": [
+    // Archivo de tipos globales del renderer (declara window.api, etc.)
+    // Es crítico que esté incluido para que todos los componentes/hooks lo vean
     "src/renderer/src/env.d.ts",
+
+    // Todo el código del renderer (React + TypeScript)
+    // Incluye App.tsx, hooks, componentes, estilos, assets, etc.
     "src/renderer/src/**/*",
+
+    // Archivos TSX específicos (aunque el /**/* ya los incluye, lo ponemos explícito por claridad)
     "src/renderer/src/**/*.tsx",
+
+    // Tipos del preload (ej: preload/index.d.ts)
+    // Necesario para que el renderer sepa que window.electron existe
     "src/preload/*.d.ts"
   ],
+
+  // Opciones del compilador específicas para el entorno web/renderer (React + Vite)
   "compilerOptions": {
+    // Habilita compilación incremental y referencias entre proyectos
+    // Muy importante para proyecto compuesto (tsconfig.json referencia este archivo)
+    // Mejora velocidad de compilación en dev y build
     "composite": true,
+
+    // Soporte para JSX con transformación moderna (React 17+)
+    // 'react-jsx' usa React.createElement automáticamente (no necesita import React from 'react')
+    // Interrelación: necesario para todos los componentes .tsx (App.tsx, TimerDisplay, etc.)
     "jsx": "react-jsx",
+
+    // Base para resolver imports relativos (desde la raíz del proyecto)
+    // Facilita paths absolutos en todo el renderer
     "baseUrl": ".",
+
+    // Alias personalizados para imports limpios en el renderer
+    // Permite escribir import App from '@renderer/App' en lugar de '../../../App'
+    // Interrelación: usado por Vite y TypeScript → evita paths largos y mejora mantenibilidad
     "paths": {
       "@renderer/*": [
         "src/renderer/src/*"

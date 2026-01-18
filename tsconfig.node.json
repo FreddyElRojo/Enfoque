@@ -1,14 +1,34 @@
 {
+  // Extiende el config oficial de @electron-toolkit para Node.js/Electron
+  // Incluye target: es2020, module: commonjs, types: ["node"], etc.
+  // Esto evita errores en módulos nativos como electron, path, fs, etc.
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
-  "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*", "src/generated/prisma/**/*"],
+
+  // Solo incluye archivos del entorno Node/main/preload
+  "include": [
+    "electron.vite.config.*",           // Config de Vite/Electron-Vite
+    "src/main/**/*",                    // Proceso principal (IPC, Prisma, ventana)
+    "src/preload/**/*",                 // Puente seguro main ↔ renderer
+    "src/generated/prisma/**/*"         // Cliente Prisma generado (tipado)
+  ],
+
   "compilerOptions": {
+    // Base para resolver imports relativos desde la raíz
     "baseUrl": ".",
+
+    // Alias para Prisma (import limpio desde cualquier archivo de main/preload)
     "paths": {
       "@prisma/client": ["src/generated/prisma"]
     },
+
+    // Compatibilidad con módulos CommonJS (necesario en Electron main/preload)
     "esModuleInterop": true,
-"allowSyntheticDefaultImports": true,
+    "allowSyntheticDefaultImports": true,
+
+    // Habilita compilación incremental y referencias cruzadas
     "composite": true,
+
+    // Tipos específicos para Electron-Vite en Node
     "types": ["electron-vite/node"]
   }
 }

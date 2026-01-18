@@ -1,3 +1,13 @@
+<!--Este archivo es la página HTML base y punto de entrada del renderer process (la parte web/React de la aplicación).
+Es el archivo que Electron carga primero en la ventana (loadFile('../renderer/index.html') en main/index.ts), y Vite lo usa como plantilla para inyectar el bundle de React.
+Responsabilidad única y concisa:
+
+Definir la estructura HTML mínima de la app.
+Proporcionar el contenedor #root donde React monta toda la UI.
+Cargar el script principal (main.tsx) que inicia React.
+Aplicar una política de seguridad básica (CSP) para proteger contra ataques comunes.-->
+
+
 <!doctype html>
 <html>
   <head>
