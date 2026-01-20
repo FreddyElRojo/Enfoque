@@ -11,12 +11,12 @@ import { useEffect, useState } from 'react'
 import { useSettings } from './hooks/useSettings'              // Conexión con DB (carga/update settings)
 import { useTimerCycle } from './hooks/useTimerCycle'          // Núcleo del temporizador Pomodoro
 import { useDailyProgress } from './hooks/useDailyProgress'    // Progreso parcial diario (intervalo 30s)
-
+import { useStreak } from './hooks/useStreak'                  // rachas
 // Importamos los componentes visuales (UI pura, reciben props y renderizan)
 import { TimerDisplay } from './components/TimerDisplay'       // Countdown + botones de control
 import { ProgressSummary } from './components/ProgressSummary' // Pomodoros y horas hoy
 import { ConfigPanel } from './components/ConfigPanel'         // Vista/edición de settings
-
+import { StreakDisplay } from './components/StreakDisplay'     // vista de rachas
 // Estilos globales del módulo CSS (vidrio esmerilado, colores por modo, botones finos)
 import styles from './App.module.css'
 
@@ -85,6 +85,8 @@ function App() {
       console.error('Error guardando settings:', err)
     }
   }
+// hook de rachas
+  const { streak, message } = useStreak();
 
   // Renderizado principal: composición de componentes
   return (
@@ -108,7 +110,7 @@ function App() {
 
       {/* Resumen de progreso: recibe contadores del hook y progreso parcial */}
       <ProgressSummary completedPomodoros={completedPomodoros} todayWorked={todayWorked} />
-
+      <StreakDisplay streak={streak} message={message} />
       {/* Panel de configuración: recibe estado de edición y callbacks */}
       <ConfigPanel
         editMode={editMode}

@@ -124,3 +124,47 @@
   
   .saveButton { background: linear-gradient(145deg, rgba(255,255,255,0.15), rgba(220,220,220,0.12)); }
   .cancelButton { background: linear-gradient(145deg, rgba(180,180,180,0.12), rgba(150,150,150,0.1)); }
+
+  /* StreakDisplay - badge sutil y motivador */
+.streakContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.9rem;
+  margin: 10px auto;
+  max-width: 320px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.streakLow {
+  color: #a0d8ef; /* Azul suave para rachas cortas */
+}
+
+.streakMedium {
+  color: #ffcc80; /* Naranja cálido para rachas medias */
+}
+
+.streakHigh {
+  color: #ffd700; /* Dorado para rachas largas */
+  font-weight: bold;
+}
+
+.streakIcon {
+  font-size: 1.2rem;
+}
+
+.streakNumber {
+  font-weight: 600;
+  min-width: 40px;
+  text-align: center;
+}
+
+.streakMessage {
+  opacity: 0.9;
+  font-style: italic;
+}

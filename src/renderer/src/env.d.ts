@@ -50,5 +50,13 @@ interface Window {
       streak: number
       notes?: string | null  // Campo opcional para notas futuras
     } | null>
+
+    // Obtiene la racha actual (días consecutivos con goalsMet = true)
+// Retorna un objeto con la racha numérica y un mensaje motivador win-win
+// (ej: "¡5 días seguidos! Sos una máquina de constancia 🔥")
+    getCurrentStreak: () => Promise<{
+      streak: number
+      message: string
+    }>
   }
 }

@@ -214,6 +214,73 @@ app.whenReady().then(async () => {
       throw error
     }
   })
+
+
+  // IPC: Obtener la racha actual (días consecutivos con goalsMet = true)
+ipcMain.handle('get-current-streak', async () => {
+  try {
+    // Traemos todos los dailyLogs ordenados por fecha descendente (más reciente primero)
+    const logs = await prisma.dailyLog.findMany({
+      orderBy: { date: 'desc' },
+      take: 100 // límite razonable (no necesitamos más de 3 meses)
+    })
+
+    if (logs.length === 0) {
+      return { streak: 0, message: '¡Empezá hoy tu racha!' }
+    }
+
+    let streak = 0
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Chequeamos desde hoy hacia atrás
+    for (let i = 0; i < logs.length; i++) {
+      const log = logs[i]
+      const logDate = new Date(log.date)
+      logDate.setHours(0, 0, 0, 0)
+
+      // Si hay un salto de más de 1 día → racha termina
+      if (i > 0) {
+        const prevDate = new Date(logs[i - 1].date)
+        prevDate.setHours(0, 0, 0, 0)
+        const diffDays = Math.round((prevDate.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24))
+        if (diffDays > 1) break
+      }
+
+      // Solo contamos días con goal cumplido
+      if (log.goalsMet) {
+        streak++
+      } else {
+        // Día parcial: no suma a racha estricta, pero no la rompe
+        // Podríamos sumar 0.5 o algo, pero por ahora racha estricta
+        break
+      }
+
+      // Si llegamos a hoy y no cumplió → racha actual termina en 0
+      if (logDate.getTime() === today.getTime() && !log.goalsMet) {
+        streak = 0
+        break
+      }
+    }
+
+    let message = ''
+    if (streak >= 7) {
+      message = `¡${streak} días seguidos! Sos una máquina de constancia 🔥`
+    } else if (streak >= 3) {
+      message = `¡${streak} días seguidos! Vas por muy buen camino 💪`
+    } else if (streak > 0) {
+      message = `¡${streak} día${streak > 1 ? 's' : ''} seguidos! Seguimos sumando 🌱`
+    } else {
+      message = '¡Hoy es un gran día para empezar tu racha! 🚀'
+    }
+
+    return { streak, message }
+  } catch (error) {
+    console.error('Error en get-current-streak:', error)
+    return { streak: 0, message: '¡Seguimos sumando!' }
+  }
+})
+
 })
 
 // Cierra la app cuando se cierran todas las ventanas (excepto macOS)

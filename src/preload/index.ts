@@ -38,7 +38,10 @@ const api = {
     ipcRenderer.invoke('log-daily-progress', hours),
 
   // Obtiene el registro completo del día actual (para mostrar progreso parcial en UI)
-  getDailyLog: (date: Date) => ipcRenderer.invoke('get-daily-log', date)
+  getDailyLog: (date: Date) => ipcRenderer.invoke('get-daily-log', date),
+
+  // Obtiene la racha actual
+  getCurrentStreak: () => ipcRenderer.invoke('get-current-streak')
 }
 
 // Lógica de exposición segura
