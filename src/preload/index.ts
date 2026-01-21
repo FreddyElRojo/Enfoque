@@ -41,14 +41,7 @@ const api = {
   getDailyLog: (date: Date) => ipcRenderer.invoke('get-daily-log', date),
 
   // Obtiene la racha actual
-  getCurrentStreak: () => ipcRenderer.invoke('get-current-streak'),
-
-  //crear tarea
-  createTask: (task: { description: string; estimatedMinutes: number }) => ipcRenderer.invoke('create-task', task),
-getTasksToday: () => ipcRenderer.invoke('get-tasks-today'),
-setActiveTask: (taskId: number) => ipcRenderer.invoke('set-active-task', taskId),
-pauseTask: (taskId: number) => ipcRenderer.invoke('pause-task', taskId),
-completeTask: (data: { taskId: number; actualMinutes: number }) => ipcRenderer.invoke('complete-task', data)
+  getCurrentStreak: () => ipcRenderer.invoke('get-current-streak')
 }
 
 // Lógica de exposición segura

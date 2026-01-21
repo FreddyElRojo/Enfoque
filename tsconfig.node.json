@@ -6,11 +6,11 @@
 
   // Solo incluye archivos del entorno Node/main/preload
   "include": [
-  "electron.vite.config.*",
-  "src/main/**/*",
-  "src/preload/**/*",
-  "src/generated/prisma/**/*"
-],
+    "electron.vite.config.*",           // Config de Vite/Electron-Vite
+    "src/main/**/*",                    // Proceso principal (IPC, Prisma, ventana)
+    "src/preload/**/*",                 // Puente seguro main ↔ renderer
+    "src/generated/prisma/**/*"         // Cliente Prisma generado (tipado)
+  ],
 
   "compilerOptions": {
     // Base para resolver imports relativos desde la raíz

@@ -24,24 +24,3 @@ model DailyLog {
   streak      Int      @default(0)
   notes       String?
 }
-
-model Task {
-  id                 Int       @id @default(autoincrement())
-  description        String    // SQLite: TEXT (longitud ilimitada, validamos en la app)
-  estimatedMinutes   Int       // SQLite: INTEGER
-  actualMinutes      Int?      // Null hasta completada
-  status             TaskStatus @default(NOT_STARTED)
-  active             Boolean   @default(false)   // Solo una tarea activa a la vez
-  date               DateTime  // Prisma guarda como TEXT ISO (ej: "2026-01-20")
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-
-  @@index([date])     // Para queries rápidas por día y limpieza automática
-}
-
-enum TaskStatus {
-  NOT_STARTED
-  IN_PROGRESS
-  PAUSED
-  COMPLETED
-}
