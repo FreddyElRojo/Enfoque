@@ -90,10 +90,12 @@ function App() {
 
   // Renderizado principal: composición de componentes
   return (
+    
     // Contenedor raíz con clase dinámica según modo (fondo cambia por trabajo/descanso)
     <div className={`${styles.container} ${styles[mode]}`}>
       {/* Título principal (fijo) */}
       <h1 className={styles.title}>Enfoque</h1>
+
 
       {/* Componente del temporizador: recibe todo el estado y control del hook */}
       <TimerDisplay
