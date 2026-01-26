@@ -26,7 +26,8 @@
     "@prisma/client": "6.19.2",
     "electron-updater": "^6.3.9",
     "prisma": "6.19.2",
-    "react-timer-hook": "^4.0.5"
+    "react-timer-hook": "^4.0.5",
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",

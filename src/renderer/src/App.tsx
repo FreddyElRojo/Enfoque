@@ -7,16 +7,19 @@ Coordinar la comunicación entre hooks (useSettings, useTimerCycle, useDailyProg
 No contiene lógica de negocio pesada → delega todo a hooks y componentes.*/
 
 // Importamos los hooks principales (cada uno maneja una responsabilidad específica)
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useSettings } from './hooks/useSettings'              // Conexión con DB (carga/update settings)
 import { useTimerCycle } from './hooks/useTimerCycle'          // Núcleo del temporizador Pomodoro
 import { useDailyProgress } from './hooks/useDailyProgress'    // Progreso parcial diario (intervalo 30s)
 import { useStreak } from './hooks/useStreak'                  // rachas
+
 // Importamos los componentes visuales (UI pura, reciben props y renderizan)
 import { TimerDisplay } from './components/TimerDisplay'       // Countdown + botones de control
 import { ProgressSummary } from './components/ProgressSummary' // Pomodoros y horas hoy
 import { ConfigPanel } from './components/ConfigPanel'         // Vista/edición de settings
 import { StreakDisplay } from './components/StreakDisplay'     // vista de rachas
+import { BackgroundLayer } from './components/BackgroundLayer'
+
 // Estilos globales del módulo CSS (vidrio esmerilado, colores por modo, botones finos)
 import styles from './App.module.css'
 
@@ -32,11 +35,9 @@ type Settings = {
 // Componente raíz del renderer: orquesta toda la app
 function App() {
   // Hook principal de conexión con DB: carga settings y provee función para actualizarlos
-  // Se conecta vía IPC a main → Prisma → DB
   const { settings, updateSettings } = useSettings()
 
   // Estado local para manejar modo edición y valores temporales del formulario
-  // Se usa como puente entre ConfigPanel y la función updateSettings
   const [editMode, setEditMode] = useState(false)
   const [tempSettings, setTempSettings] = useState<Partial<Settings>>({})
 
@@ -51,9 +52,9 @@ function App() {
     resetTimer,              // Reinicio completo → pasa a TimerDisplay
     completedPomodoros       // Contador de ciclos terminados → pasa a ProgressSummary
   } = useTimerCycle({
-    workDuration: settings?.workTime || 25,         // Duración de trabajo (de DB o default)
-    shortBreakDuration: settings?.breakTime || 5,   // Descanso corto
-    longBreakDuration: settings?.longBreak || 15    // Descanso largo
+    workDuration: (settings?.workTime ?? 25) * 60,
+    shortBreakDuration: (settings?.breakTime ?? 5) * 60,
+    longBreakDuration: (settings?.longBreak ?? 15) * 60
   })
 
   // Hook de progreso parcial: suma horas cada 30s en modo trabajo
@@ -61,7 +62,6 @@ function App() {
   const { todayWorked } = useDailyProgress({ isRunning, mode })
 
   // Inicializa tempSettings con valores actuales cuando settings se cargan de DB
-  // Esto permite que el formulario de edición arranque con los valores correctos
   useEffect(() => {
     if (settings) {
       setTempSettings(settings)
@@ -69,7 +69,6 @@ function App() {
   }, [settings])
 
   // Función para guardar cambios en DB (llama a updateSettings del hook)
-  // Se pasa como prop a ConfigPanel → se ejecuta al presionar Guardar
   const saveSettings = async () => {
     if (!tempSettings.workTime || !tempSettings.breakTime || !tempSettings.longBreak) return
 
@@ -85,16 +84,20 @@ function App() {
       console.error('Error guardando settings:', err)
     }
   }
-// hook de rachas
-  const { streak, message } = useStreak();
+
+  // Hook de rachas
+  const { streak, message } = useStreak()
 
   // Renderizado principal: composición de componentes
   return (
+    <>
+    <BackgroundLayer/>
     // Contenedor raíz con clase dinámica según modo (fondo cambia por trabajo/descanso)
     <div className={`${styles.container} ${styles[mode]}`}>
+    <div className={styles.titleWrapper}>
       {/* Título principal (fijo) */}
       <h1 className={styles.title}>Enfoque</h1>
-
+      </div>
       {/* Componente del temporizador: recibe todo el estado y control del hook */}
       <TimerDisplay
         totalSeconds={totalSeconds}
@@ -110,7 +113,10 @@ function App() {
 
       {/* Resumen de progreso: recibe contadores del hook y progreso parcial */}
       <ProgressSummary completedPomodoros={completedPomodoros} todayWorked={todayWorked} />
+
+      {/* Vista de rachas */}
       <StreakDisplay streak={streak} message={message} />
+
       {/* Panel de configuración: recibe estado de edición y callbacks */}
       <ConfigPanel
         editMode={editMode}
@@ -121,6 +127,7 @@ function App() {
         settings={settings}
       />
     </div>
+    </>
   )
 }
 

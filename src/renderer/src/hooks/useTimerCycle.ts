@@ -5,16 +5,7 @@ Manejar el estado del ciclo (modo actual: trabajo / descanso corto / largo).
 Gestionar el countdown (usando react-timer-hook).
 Controlar transiciones automáticas entre modos (work → short/long break → work).
 Contar pomodoros completados en la sesión.
-Reiniciar el timer cuando cambian las duraciones (ej: al guardar settings).
-
-Funcionalidad principal:
-
-Inicializa en modo 'work' con duración configurable.
-Al terminar un ciclo (onExpire): decide el siguiente modo, suma pomodoro si era trabajo.
-Reinicia automáticamente el timer al cambiar duraciones (solución al bug de settings).
-Siempre reinicia en pausa (autoStart: false) → usuario decide cuándo empezar.
-Exporta todo lo necesario para UI y control (totalSeconds para formato >60 min).*/
-
+Reiniciar el timer cuando cambian las duraciones (ej: al guardar settings).*/
 
 // Importamos el hook de timer (react-timer-hook) que maneja countdown, estados y eventos
 import { useTimer } from 'react-timer-hook'
@@ -44,7 +35,7 @@ export const useTimerCycle = ({ workDuration, shortBreakDuration, longBreakDurat
   const getExpiryTimestamp = useCallback(() => {
     const time = new Date()
     const duration = mode === 'work' ? workDuration : (mode === 'shortBreak' ? shortBreakDuration : longBreakDuration)
-    time.setSeconds(time.getSeconds() + duration * 60)
+    time.setSeconds(time.getSeconds() + duration)
     return time
   }, [mode, workDuration, shortBreakDuration, longBreakDuration])
 
@@ -85,22 +76,22 @@ export const useTimerCycle = ({ workDuration, shortBreakDuration, longBreakDurat
     autoStart: false  // Nunca inicia automáticamente al montar o reiniciar
   })
 
-  // Reinicia el timer automáticamente cuando cambian duraciones o modo
+  // Reinicia el timer automáticamente cuando cambian las duraciones desde settings
   // Esto soluciona el bug de que al guardar nuevos settings el timer no se actualiza
-  // Reinicia el timer cuando cambian las duraciones (de settings)
-useEffect(() => {
-  console.log('Duraciones cambiadas (work/short/long):', {
-    work: workDuration,
-    short: shortBreakDuration,
-    long: longBreakDuration
-  })
+  useEffect(() => {
+    console.log('Duraciones cambiadas (work/short/long):', {
+      work: workDuration,
+      short: shortBreakDuration,
+      long: longBreakDuration
+    })
 
-  // Fuerza reinicio completo con nuevos valores
-  restart(getExpiryTimestamp(), false) // false = queda en pausa
+    // Fuerza reinicio completo con nuevos valores
+    // restart y getExpiryTimestamp están en scope aquí
+    restart(getExpiryTimestamp(), false) // false = queda en pausa
 
-  // Opcional: si querés que siga corriendo, usa true en vez de false
-  // restart(getExpiryTimestamp(), isRunning) // mantiene estado running
-}, [workDuration, shortBreakDuration, longBreakDuration, restart, getExpiryTimestamp])
+    // Opcional: si querés que siga corriendo, usa true en vez de false
+    // restart(getExpiryTimestamp(), isRunning) // mantiene estado running
+  }, [workDuration, shortBreakDuration, longBreakDuration, restart, getExpiryTimestamp])
 
   // Función para resetear todo: vuelve a modo trabajo, reinicia contador y timer (en pausa)
   const resetTimer = () => {

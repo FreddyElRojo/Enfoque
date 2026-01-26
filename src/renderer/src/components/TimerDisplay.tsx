@@ -57,33 +57,40 @@ export const TimerDisplay = ({
 
   return (
     <>
-      {/* Título del modo actual (Trabajo / Descanso / Largo) */}
-      {/* Aplica clase dinámica según modo para cambiar color (rojo trabajo, verde descanso) */}
-      <h2 className={`${styles.mode} ${mode === 'work' ? styles.workMode : styles.breakMode}`}>
-        {mode === 'work' ? 'Trabajo' : mode === 'shortBreak' ? 'Descanso' : 'Largo'}
-      </h2>
+      
 
       {/* Contenedor del countdown */}
       {/* Clase .timer para tamaño grande, fuente bold y opacidad sutil */}
-      <div className={styles.timer}>
-        {formatTime()}
-      </div>
+      <div className={styles.timerPanel}>
+  <div className={styles.timerScreen}>
+
+    <div className={styles.timerTopRow}>
+      <span className={`${styles.timerMode} ${styles[mode]}`}>
+        {mode === 'work' ? 'FOCUS' : mode === 'shortBreak' ? 'BREAK' : 'LONG BREAK'}
+      </span>
+    </div>
+
+    <span className={styles.timer}>{formatTime()}</span>
+
+  </div>
+</div>
+
 
       {/* Contenedor de botones de control */}
       {/* Clase .buttons para alineación horizontal y spacing */}
-      <div className={styles.buttons}>
+      <div className={styles.timerControlButtons}>
         {/* Botón Iniciar: solo activo si no está corriendo */}
-        <button onClick={start} disabled={isRunning} className={styles.button}>
+        <button onClick={start} disabled={isRunning} className={styles.timerControlButton}>
           Iniciar
         </button>
 
         {/* Botón Pausar/Reanudar: cambia texto según estado */}
-        <button onClick={isRunning ? pause : resume} className={styles.button}>
+        <button onClick={isRunning ? pause : resume} className={styles.timerControlButton}>
           {isRunning ? 'Pausar' : 'Reanudar'}
         </button>
 
         {/* Botón Reset: reinicia todo el ciclo (vuelve a modo trabajo) */}
-        <button onClick={resetTimer} className={styles.button}>
+        <button onClick={resetTimer} className={styles.timerControlButton}>
           Reset
         </button>
       </div>
