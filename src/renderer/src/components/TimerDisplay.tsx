@@ -23,7 +23,7 @@ type TimerDisplayProps = {
   isRunning: boolean                       // Indica si el timer está corriendo (deshabilita botón Iniciar)
   start: () => void                        // Inicia el timer desde pausa
   pause: () => void                        // Pausa el timer
-  resume: () => void                       // Reanuda el timer desde pausa
+                        // Reanuda el timer desde pausa
   resetTimer: () => void                   // Reinicia todo el ciclo (vuelve a modo trabajo)
 }
 
@@ -35,7 +35,6 @@ export const TimerDisplay = ({
   isRunning,
   start,
   pause,
-  resume,
   resetTimer
 }: TimerDisplayProps) => {
   // Función interna para formatear el tiempo de forma correcta
@@ -80,14 +79,11 @@ export const TimerDisplay = ({
       {/* Clase .buttons para alineación horizontal y spacing */}
       <div className={styles.timerControlButtons}>
         {/* Botón Iniciar: solo activo si no está corriendo */}
-        <button onClick={start} disabled={isRunning} className={styles.timerControlButton}>
-          Iniciar
+        <button onClick={isRunning ? pause : start}  className={styles.timerControlButton}>
+        {isRunning ? 'Pausar' : 'Iniciar'}
         </button>
 
-        {/* Botón Pausar/Reanudar: cambia texto según estado */}
-        <button onClick={isRunning ? pause : resume} className={styles.timerControlButton}>
-          {isRunning ? 'Pausar' : 'Reanudar'}
-        </button>
+        
 
         {/* Botón Reset: reinicia todo el ciclo (vuelve a modo trabajo) */}
         <button onClick={resetTimer} className={styles.timerControlButton}>

@@ -24,3 +24,10 @@ model DailyLog {
   streak      Int      @default(0)
   notes       String?
 }
+
+model Tasks {
+id     Int     @id    @default(autoincrement())
+
+
+
+}
